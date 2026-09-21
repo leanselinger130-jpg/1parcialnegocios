@@ -67,6 +67,29 @@
   .result.show{display:block}
   .result h2{margin:0 0 6px}
   .empty{text-align:center;color:var(--muted);padding:40px 0}
+  /* --- filtros y badge de parciales anteriores --- */
+  :root{ --warn:#8a6100; --warn-bg:#fff5da; --warn-bd:#e8c765;
+         --hot:#b93815;  --hot-bg:#ffe9df;  --hot-bd:#f0a482; }
+  @media (prefers-color-scheme:dark){
+    :root{ --warn:#e9c46a; --warn-bg:#3a2e10; --warn-bd:#6b5518;
+           --hot:#ff9f6e;  --hot-bg:#42200f;  --hot-bd:#7a3b1c; }
+  }
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+  .fbtn{border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;
+    border-radius:999px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:.15s}
+  .fbtn:hover{border-color:var(--primary)}
+  .fbtn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+  .fbtn.sub{font-size:.82rem;padding:6px 12px;font-weight:500}
+  .fcheck{display:inline-flex;align-items:center;gap:7px;font-size:.86rem;color:var(--muted);
+    cursor:pointer;user-select:none;padding:6px 0}
+  .fcheck input{accent-color:var(--primary);width:16px;height:16px;cursor:pointer;margin:0}
+  .fcheck.on{color:var(--hot);font-weight:600}
+  @media (min-width:720px){ .fcheck{margin-left:auto} }
+  .scope{font-size:.85rem;color:var(--muted);margin:0 0 10px}
+  .exam{display:inline-block;font-size:.72rem;font-weight:700;line-height:1.35;
+    padding:3px 10px;border-radius:999px;margin:0 0 8px 6px;
+    background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
+  .exam.hot{background:var(--hot-bg);color:var(--hot);border-color:var(--hot-bd)}
 </style>
 </head>
 <body>
@@ -76,10 +99,12 @@
 </header>
 <main>
   <nav id="tabs"></nav>
+  <div class="filters" id="filters"></div>
   <div class="toolbar">
     <div class="score">Respondidas <b id="answered">0</b>/<b id="total">0</b> · Correctas <b id="right">0</b></div>
     <div class="actions"><button class="btn" id="reset">Reiniciar</button></div>
   </div>
+  <div class="scope" id="scope"></div>
   <div class="bar"><i id="progress"></i></div>
   <div id="list"></div>
   <div class="result" id="result"></div>
@@ -94,28 +119,32 @@ const UNITS = [
     id: "u1", name: "Unidad 1",
     questions: [
       /* Bloque 1 */
-      { block:"Perfil y preparación",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Perfil y preparación",
         q:"¿Cuál describe correctamente el perfil actual del profesional de Negocios Internacionales?",
         opts:["Un especialista en logística y aduana que gestiona las importaciones y exportaciones de una única empresa, con foco en reducir los costos de transporte.",
               "Un estratega global con dominio de idiomas, negociación, análisis de mercados y visión cultural.",
               "Un vendedor de alto rendimiento con foco en cumplir metas de corto plazo y cerrar operaciones al mayor margen posible."],
         correct:1,
         why:"El perfil actual es el de un estratega global: combina idiomas, negociación, análisis de mercados y visión cultural. Las otras opciones describen roles parciales (logística/aduana o vendedor de corto plazo)." },
-      { block:"Perfil y preparación",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Perfil y preparación",
         q:"Un desarrollador de negocios internacionales estudia el modelo comercial, los protocolos de contacto y el sistema de compensación de su empresa. ¿Qué pata de su preparación está reforzando?",
         opts:["Habilidades, porque son técnicas de venta y de negociación que se aprenden y se practican en cada reunión con el cliente.",
               "Actitudes, porque definen cómo se posiciona frente a la empresa y frente a los clientes.",
               "Conocimientos, porque se trata de información sobre la empresa, su modelo comercial y su forma de trabajar."],
         correct:2,
         why:"Estudiar el modelo comercial, los protocolos y la compensación es adquirir información sobre la empresa y su forma de trabajar: son Conocimientos." },
-      { block:"Perfil y preparación",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Perfil y preparación",
         q:"¿Cuál de las siguientes opciones enumera únicamente HABILIDADES del desarrollador de negocios internacionales?",
         opts:["Negociación, sintonizar–empatizar, creatividad e improvisación, servicio al cliente.",
               "Perseverancia, flexibilidad, tolerancia a la frustración, automotivación, proactividad.",
               "Empresa, estructura, mercado/cartera, productos, competencia, herramientas de trabajo."],
         correct:0,
         why:"Negociación, empatía, creatividad e improvisación y servicio al cliente son habilidades. La opción b lista actitudes y la c lista conocimientos." },
-      { block:"Perfil y preparación",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Perfil y preparación",
         q:"¿Qué se aclaró en clase sobre la importancia relativa de las tres patas de la preparación?",
         opts:["Las actitudes son la única pata decisiva, ya que los conocimientos y las habilidades los provee la empresa mediante capacitación interna durante los primeros meses.",
               "Las tres son importantes; conocimientos y habilidades tienen la particularidad de que se pueden ir adquiriendo.",
@@ -123,36 +152,49 @@ const UNITS = [
         correct:1,
         why:"En clase se dijo que las tres patas importan; conocimientos y habilidades tienen la particularidad de que se pueden ir adquiriendo. Las otras opciones declaran una sola pata como decisiva o afirman que las demás se desarrollan solas." },
 
+      { category:"clase", guest:null, examHistory:{asked:true, times:1, temas:["Tema 1"]},
+        block:"Perfil y preparación",
+        q:"¿Qué es un Desarrollador de Negocios Internacionales?",
+        opts:["Es un profesional de administración que vende productos o servicios a nivel global.",
+              "Es una persona que a través de su comportamiento y acción logra que otras personas a lo largo del mundo hagan algo que no harían espontáneamente.",
+              "Es una persona que comercializa bienes y servicios en el mundo a comisión."],
+        correct:1,
+        why:"Es la definición textual usada en la cátedra. Las otras dos son distractores típicos de parcial: reducen el rol a \"vendedor\" o a \"comisionista\"." },
       /* Bloque 2 */
-      { block:"Ciclo de desarrollo de negocios",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Ciclo de desarrollo de negocios",
         q:"¿Para qué sirve la etapa de Contacto del ciclo de desarrollo de negocios internacionales?",
         opts:["Para establecer la doble correspondencia entre la solución ofrecida y el problema específico del prospecto.",
               "Para obtener el organigrama de la empresa y comprender su proceso decisorio de compra.",
               "Para conocer los roles involucrados y saber con quiénes se deberá relacionar en el futuro."],
         correct:2,
         why:"Contacto sirve para conocer los roles involucrados y saber con quiénes habrá que relacionarse. La opción a corresponde a Investigación (doble correspondencia) y la b a Calificación (organigrama y proceso decisorio)." },
-      { block:"Ciclo de desarrollo de negocios",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Ciclo de desarrollo de negocios",
         q:"Un desarrollador averigua si el proyecto del prospecto existe realmente, si tiene fondos asignados, en qué plazos quiere comprar e implementar y quién tiene la autoridad de compra. ¿En qué etapa del ciclo está?",
         opts:["Contacto, porque interactúa personalmente con uno de los roles del prospecto.",
               "Calificación, porque valida la existencia del proyecto, los fondos, los tiempos y la autoridad de compra.",
               "Investigación, porque identifica la oportunidad y quiénes más están cotizando."],
         correct:1,
         why:"Validar proyecto, fondos, plazos y autoridad de compra es lo que se hace en Calificación. Contacto es solo la primera interacción con un rol, e Investigación busca entender la necesidad real y quiénes más están cotizando." },
-      { block:"Ciclo de desarrollo de negocios",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Ciclo de desarrollo de negocios",
         q:"En la etapa de Investigación se establece la \"doble correspondencia\". ¿Cuál es?",
         opts:["De la solución ofrecida con el problema específico, y de la empresa proveedora con la empresa cliente.",
               "Del precio ofrecido con el presupuesto del prospecto, y del plazo de entrega con el plazo de implementación.",
               "De las necesidades operacionales de la empresa con las motivaciones personales de cada uno de sus roles."],
         correct:0,
         why:"La doble correspondencia es entre la solución y el problema específico del prospecto, y entre la empresa proveedora y la empresa cliente." },
-      { block:"Ciclo de desarrollo de negocios",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Ciclo de desarrollo de negocios",
         q:"Tras la presentación, el prospecto responde \"necesito pensarlo\" sin dar más explicaciones. ¿Cómo se clasifica esta objeción y cómo conviene manejarla?",
         opts:["Real: es una limitación de la solución, por lo que hay que ser honesto y discutir alternativas.",
               "Ficticia: es una afirmación vaga, por lo que hay que profundizar para entender sus verdaderas preocupaciones.",
               "Real: es un error de percepción, por lo que hay que dar información adicional y aclarar el malentendido."],
         correct:1,
         why:"Las objeciones ficticias son excusas o afirmaciones vagas para evitar decidir; ante \"necesito pensarlo\" hay que profundizar para entender sus verdaderas preocupaciones. Las reales (limitaciones de la solución, errores de percepción) se manejan con honestidad e información adicional." },
-      { block:"Ciclo de desarrollo de negocios",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Ciclo de desarrollo de negocios",
         q:"¿Cuál de las siguientes afirmaciones sobre el Cierre es correcta?",
         opts:["Una vez presentada la propuesta técnico-económica el cierre es automático, por lo que el vendedor no necesita pedir la orden de compra.",
               "En la venta de soluciones alcanza con un único ciclo de venta para llegar al cierre, siempre que el prospecto haya reconocido su necesidad.",
@@ -160,34 +202,55 @@ const UNITS = [
         correct:2,
         why:"El cierre es consecuencia de haber hecho bien los pasos previos, y requiere equilibrio: ni forzarlo ni esperarlo pasivamente. No es automático y no alcanza con un único ciclo." },
 
+      { category:"clase", guest:null, examHistory:{asked:true, times:2, temas:["Tema 2","Tema 4"]},
+        block:"Ciclo de desarrollo de negocios",
+        q:"¿Cuál es el Ciclo de Desarrollo de Negocios Internacionales?",
+        opts:["Presentación y Manejo de Objeciones - Contacto - Calificación - Investigación - Cierre.",
+              "Contacto - Calificación - Investigación - Presentación y Manejo de Objeciones - Cierre.",
+              "Contacto - Presentación y Manejo de Objeciones - Investigación - Calificación - Cierre."],
+        correct:1,
+        why:"Apareció igual en Tema 2 y Tema 4. Es puro orden memorístico: Contacto → Calificación → Investigación → Presentación y Manejo de Objeciones → Cierre." },
+      { category:"clase", guest:null, examHistory:{asked:true, times:2, temas:["Tema 2","Tema 4"]},
+        block:"Ciclo de desarrollo de negocios",
+        q:"Un desarrollador ya validó fondos y autoridad de compra del prospecto, y ahora necesita establecer la doble correspondencia entre su solución y el problema del cliente. ¿Qué etapa viene DESPUÉS de esa?",
+        opts:["Contacto.",
+              "Presentación y Manejo de Objeciones.",
+              "Cierre directo, sin pasos intermedios."],
+        correct:1,
+        why:"Calificación (fondos/autoridad) → Investigación (doble correspondencia, lo que ya hizo) → sigue Presentación y Manejo de Objeciones. Sirve para practicar el orden en formato de caso, no solo de memoria." },
       /* Bloque 3 */
-      { block:"Logística del comercial y funnel",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Logística del comercial y funnel",
         q:"¿Qué es la logística del vendedor / desarrollador de negocios internacionales?",
         opts:["Las actividades que realiza cuando no está frente al cliente, que suelen subestimarse aunque son decisivas para su éxito.",
               "Las tareas de transporte, almacenaje y entrega física de la mercadería que vende a sus clientes en el exterior, incluyendo la documentación de embarque.",
               "El seguimiento que hace después de la venta, una vez que el cliente ya recibió la orden de compra."],
         correct:0,
         why:"La logística del comercial son las actividades fuera de la interacción con el cliente (preparación, seguimiento, registro, etc.), subestimadas pero decisivas. No se refiere a la logística física de mercadería." },
-      { block:"Logística del comercial y funnel",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Logística del comercial y funnel",
         q:"¿Qué dos etapas tiene el funnel que NO forman parte del ciclo de desarrollo de cinco pasos?",
         opts:["Prospección y Presentación","Investigación y Post venta","Prospección y Post venta"],
         correct:2,
         why:"El funnel agrega Prospección (al inicio) y Post venta (al final) al ciclo de cinco pasos. Presentación e Investigación ya son parte del ciclo." },
-      { block:"Logística del comercial y funnel",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Logística del comercial y funnel",
         q:"Un director comercial actualiza su funnel todas las semanas, pero en dos meses ninguna oportunidad cambió de etapa. ¿Qué principio del funnel está pasando por alto?",
         opts:["El funnel debe hacer progresar los proyectos de forma proactiva, ya que el mero transcurrir del tiempo no modifica su composición.",
               "El funnel debe actualizarse cada semana, porque la periodicidad por sí sola hace que las oportunidades avancen de etapa.",
               "El funnel debe incluir una sola oportunidad por cuenta, para que el avance de cada prospecto pueda medirse con claridad."],
         correct:0,
         why:"Actualizar el funnel no basta: hay que hacer avanzar los proyectos activamente. El paso del tiempo por sí solo no cambia su composición." },
-      { block:"Logística del comercial y funnel",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Logística del comercial y funnel",
         q:"¿Cuál describe correctamente la \"lista corta\" del funnel?",
         opts:["Personas o empresas que podrían estar interesadas pero con las que aún no hubo interacción directa; es el punto de partida.",
               "Prospectos que ya concretaron una compra y se convirtieron en clientes, que son el resultado final del funnel tras recorrer sus etapas.",
               "Prospectos que pasaron por calificación e investigación y muestran un interés concreto, por lo que ahí se concentran los esfuerzos de cierre."],
         correct:2,
         why:"La lista corta reúne a los prospectos que ya pasaron por calificación e investigación y muestran un interés concreto, por lo que ahí se concentran los esfuerzos de cierre. La opción a describe a los potenciales (todavía sin interacción directa, punto de partida de la prospección) y la b a los clientes (prospectos que ya compraron)." },
-      { block:"Logística del comercial y funnel",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Logística del comercial y funnel",
         q:"¿Cuál es una ventaja del funnel para el GERENTE (y no para el vendedor)?",
         opts:["Aumentar su credibilidad interna frente a la dirección y frente al resto de las áreas de la compañía.",
               "Evitar el drenaje de recursos escasos de la compañía en oportunidades que no cierran.",
@@ -195,63 +258,184 @@ const UNITS = [
         correct:1,
         why:"Evitar que se drenen recursos escasos de la compañía en oportunidades que no cierran es una ventaja propia del gerente. Las otras dos benefician al vendedor." },
 
+      { category:"clase", guest:null, examHistory:{asked:true, times:1, temas:["Tema 1"]},
+        block:"Logística del comercial y funnel",
+        q:"¿Qué es un Funnel?",
+        opts:["El funnel es la herramienta que explica la situación futura de las oportunidades comerciales.",
+              "El funnel es el barómetro que explica la situación presente y marca el camino para la actividad comercial futura.",
+              "El funnel es el termómetro de las futuras oportunidades comerciales al momento del cierre."],
+        correct:1,
+        why:"\"Barómetro que explica la situación presente\" es la definición exacta de la diapositiva. Las variantes tramposas (\"termómetro\", \"situación futura\") cambian la esencia del concepto: el funnel mide el presente, no predice el futuro." },
+      { category:"clase", guest:null, examHistory:{asked:true, times:2, temas:["Tema 2","Tema 4"]},
+        block:"Logística del comercial y funnel",
+        q:"¿Cuáles son las Ventajas para el Vendedor de utilizar un Funnel?",
+        opts:["Selección de Tareas Futuras - Foco - Herramienta para hablar con sus Pares - Selección de tareas más productivas.",
+              "Foco - Herramienta para hablar con su Jefe - Selección de tareas más productivas - Mejora de organización de su trabajo de Ventas.",
+              "Foco - Herramienta para hablar con sus Pares - Selección de tareas rutinarias - Mejora de organización de su trabajo de Ventas y prospección."],
+        correct:1,
+        why:"Apareció igual en Tema 2 y Tema 4: altísima probabilidad de repetirse. Las trampas están en \"Jefe\" (correcto) vs \"Pares\" (incorrecto) y \"tareas más productivas\" (correcto) vs \"tareas futuras/rutinarias\" (incorrecto)." },
+      { category:"clase", guest:null, examHistory:{asked:true, times:2, temas:["Tema 2","Tema 4"]},
+        block:"Logística del comercial y funnel",
+        q:"Según lo visto en clase, ¿cuál de las siguientes NO es una ventaja del Funnel para el vendedor?",
+        opts:["Le permite evitar el drenaje de recursos escasos de la compañía en oportunidades que no cierran.",
+              "Le ayuda a tener foco.",
+              "Le permite aumentar su credibilidad interna."],
+        correct:0,
+        why:"\"Evitar el drenaje de recursos escasos\" es una ventaja para el GERENTE, no para el vendedor. Esta variante cruza el tema repetido de parciales con la distinción vendedor/gerente, que también se toma." },
       /* Bloque 4 */
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"Un gerente de compras quiere ascender y ganar visibilidad dentro de la empresa. Según la estrategia en la cuenta, esa motivación personal determina principalmente:",
         opts:["Qué vendo, porque las motivaciones personales definen la solución técnica que se propone.",
               "Cómo lo vendo, porque las motivaciones e inquietudes personales dictan el enfoque con ese rol.",
               "Qué vendo y cómo lo vendo, porque necesidades y motivaciones son iguales para todos los roles."],
         correct:1,
         why:"Las necesidades operacionales definen QUÉ se vende; las motivaciones personales definen CÓMO se vende, es decir, el enfoque con cada rol." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"¿Cuál de las siguientes características corresponde a las necesidades operacionales insatisfechas de la empresa (y no a las motivaciones personales)?",
         opts:["Son concretas, identificables y se plasman en un proyecto resuelto con la propuesta técnico-económica.",
               "Son propias de cada rol y rara vez se hacen explícitas durante las reuniones con el cliente.",
               "Son diferentes para cada actor y se satisfacen con procesos de venta individuales."],
         correct:0,
         why:"Las necesidades operacionales son concretas e identificables y se resuelven con un proyecto y su propuesta técnico-económica. Las opciones b y c describen motivaciones personales." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"Un desarrollador descubre que, además del problema de pedidos manuales que el cliente ya conoce, hay una oportunidad oculta que mejoraría sus operaciones. ¿Qué componente de \"leer la cuenta\" está aplicando?",
         opts:["Conocer los roles, porque identifica a las personas clave que participan de la decisión.",
               "Entender las necesidades, porque comprende el contexto y los problemas asociados a lo que pide la empresa.",
               "Descubrir problemas y oportunidades, porque va más allá de los problemas que el cliente ya conoce."],
         correct:2,
         why:"Detectar algo que el cliente aún no ve es \"descubrir problemas y oportunidades\": ir más allá de los problemas ya conocidos." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"¿Qué significa aportar \"valor diferencial\" para que el cliente te vea como un socio estratégico?",
         opts:["Aportar algo más allá de lo esperado, aunque no sea su trabajo, para que el cliente logre sus objetivos.",
               "Ofrecer un precio menor que el de la competencia para quedar posicionado en la lista corta de proveedores.",
               "Especializarse en el gerente de compras, que es el rol que más pesa en la decisión, para dominar sus motivaciones."],
         correct:0,
         why:"El valor diferencial es aportar más de lo esperado, aunque exceda tu tarea, para ayudar al cliente a alcanzar sus objetivos. No se reduce a precio ni a un único rol." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"Tras una reunión en la que el prospecto mostró interés, el desarrollador se despide con \"cualquier novedad te escribo\". ¿Qué recomendación de \"Recuerde, anote y ponga en práctica\" está incumpliendo?",
         opts:["Valide siempre la información recabada con más de una fuente dentro de la cuenta.",
               "Genere compromisos siempre: irse de la reunión con un próximo paso acordado.",
               "Hable menos y escuche más para conocer las necesidades reales del cliente."],
         correct:1,
         why:"Despedirse sin un próximo paso acordado incumple \"genere compromisos siempre\": toda reunión debe terminar con una acción concreta y fecha." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
+        block:"Seguimiento, account management y planning",
         q:"¿Qué implica la recomendación \"No suponga, haga drill down\"?",
         opts:["Profundizar en los detalles de la cuenta y validar la información en vez de darla por sentada.",
               "Revisar el funnel de arriba hacia abajo, desde toda la cartera hasta cada oportunidad puntual.",
               "Retomar las oportunidades caídas del funnel para reactivar la conversación con prospectos que se enfriaron."],
         correct:0,
         why:"\"Drill down\" es profundizar en el detalle y validar la información en lugar de suponerla." },
-      { block:"Seguimiento, account management y planning",
+      { category:"clase", guest:null, examHistory:{asked:true, times:1, temas:["Tema 3"]},
+        block:"Seguimiento, account management y planning",
+        q:"¿Qué es leer una cuenta (Estrategia de la Cuenta)?",
+        opts:["Conocer la cuenta - Entender la competencia - Descubrir su estrategia de marketing.",
+              "Conocer los roles - Entender las necesidades - Descubrir problemas y oportunidades.",
+              "Conocer los roles - Entender la competencia - Descubrir su estrategia de marketing digital."],
+        correct:1,
+        why:"Es la tríada exacta de la diapositiva. Los distractores meten \"competencia\" y \"marketing digital\", que no forman parte de la definición de \"leer la cuenta\"." },
+      /* Bloque 5: invitados */
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
         q:"Según el esquema del invitado Guillermo Oyadomari, ¿cuál de los siguientes elementos corresponde a ACCOUNT MANAGEMENT y no al Plan de ventas?",
         opts:["Pronóstico de ventas a cinco años, para estimar la inversión y cuánto se va a recuperar.",
               "Registración de cuentas: mantener un registro de los clientes y de las interacciones con ellos.",
               "Venta indirecta: vender a través de intermediarios como distribuidores o minoristas."],
         correct:1,
         why:"La registración de cuentas (clientes e interacciones) es parte de Account Management. El pronóstico de ventas y la venta indirecta pertenecen al Plan de ventas." },
-      { block:"Seguimiento, account management y planning",
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
         q:"Según el esquema del invitado Guillermo Oyadomari, ¿cuál de los siguientes ítems forma parte del PLAN DE NEGOCIO (y no de la Planificación)?",
         opts:["Caso de negocio: justificación de por qué se lanza el proyecto y beneficios esperados.",
               "Facturación/impuestos: proceso de cobros y cumplimiento fiscal.",
               "Resumen ejecutivo: síntesis del plan de negocio con sus puntos clave."],
         correct:2,
-        why:"El resumen ejecutivo sintetiza el plan de negocio y forma parte de él. El caso de negocio y la facturación/impuestos corresponden a la Planificación." }
+        why:"El resumen ejecutivo sintetiza el plan de negocio y forma parte de él. El caso de negocio y la facturación/impuestos corresponden a la Planificación." },
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
+        q:"Según el esquema de Oyadomari, ¿cuál de estos elementos corresponde a CONTEXTO?",
+        opts:["Pronóstico de ventas a 5 años.",
+              "Matriz BCG.",
+              "Resumen ejecutivo."],
+        correct:1,
+        why:"Contexto incluye: Compañía, Análisis de Mercado, Producto, Posicionamiento, Competencia, Canales y Matriz BCG. El pronóstico a 5 años es Plan de Ventas; el resumen ejecutivo es Plan de Negocio." },
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
+        q:"¿Cuál de los siguientes ítems pertenece a ESTRATEGIA/PLAN DE MARKETING y no a Plan de Ventas?",
+        opts:["Generación de leads y evento de lanzamiento de marca.",
+              "Venta directa e indirecta.",
+              "Pricing."],
+        correct:0,
+        why:"Plan de Marketing: plan de acción, inversión, generación de leads, evento de lanzamiento, eventos, press release y métricas. Plan de Ventas: pronóstico a 5 años, venta directa/indirecta y pricing." },
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
+        q:"Según el esquema de Oyadomari, ¿cuál de los siguientes elementos corresponde a GESTIÓN DE VENTAS (Account Management) y no al Plan de Ventas?",
+        opts:["Pronóstico de ventas a cinco años.",
+              "Gobierno de datos en CRM.",
+              "Venta indirecta a través de distribuidores."],
+        correct:1,
+        why:"Gestión de Ventas incluye: alineación estratégica, proceso de venta estandarizado, precios y promociones, gobierno de datos en CRM, playbooks, capacitación/certificaciones y retención/upselling." },
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
+        q:"¿Cuál de los siguientes ítems forma parte de PLANIFICACIÓN y no de Plan de Negocio?",
+        opts:["Facturación/impuestos e infraestructura local.",
+              "Resumen ejecutivo.",
+              "Finanzas y mercados."],
+        correct:0,
+        why:"Planificación: caso de negocio, RRHH, marketing, infraestructura local, inversión/flujo de caja, administración, facturación/impuestos, logística y contratos. Plan de Negocio: generalidades, resumen ejecutivo, organización/legal, finanzas, operaciones y mercados." },
+      { category:"invitado", guest:"oyadomari", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Guillermo Oyadomari",
+        q:"¿Qué idea central transmitió Oyadomari sobre el momento tecnológico actual para las empresas?",
+        opts:["Hay que ver la IA generativa como una oportunidad estratégica para volver los procesos más autónomos y eficientes, no como una amenaza.",
+              "La adopción de IA generativa ya demostró un retorno financiero medible en la mayoría de los pilotos empresariales.",
+              "La automatización de procesos reemplaza por completo la necesidad de estrategia comercial."],
+        correct:0,
+        why:"Según su presentación, buena parte de los pilotos de IA generativa fracasan o no logran retorno medible; el punto central es la oportunidad estratégica, no un éxito ya garantizado." },
+      { category:"invitado", guest:"martel", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Hernán Martel",
+        q:"Según lo presentado por Martel, ¿qué caracteriza a la Cuarta Revolución Industrial?",
+        opts:["Mecanización de la producción utilizando vapor y agua.",
+              "Producción en masa con líneas de montaje e introducción de la energía eléctrica.",
+              "Robótica, Internet de las cosas, sensores, inteligencia artificial, machine learning y servicios en la nube."],
+        correct:2,
+        why:"1ra: vapor/agua. 2da: producción en masa/electricidad. 3ra: electrónica e informática para automatizar líneas. 4ta: la de la opción c. El invitado planteó como pregunta abierta si la IA generativa está iniciando una 5ta revolución." },
+      { category:"invitado", guest:"martel", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Hernán Martel",
+        q:"Según el informe citado por Martel sobre el futuro del trabajo, ¿qué tipo de competencias demandará más la automatización y la robotización?",
+        opts:["Resolución de problemas e innovación.",
+              "Memorización de procesos manuales repetitivos.",
+              "Especialización exclusiva en tareas administrativas rutinarias."],
+        correct:0,
+        why:"La automatización y la robotización aumentan la demanda de conocimientos técnicos sobre resolución de problemas e innovación, no de tareas repetitivas." },
+      { category:"invitado", guest:"martel", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Hernán Martel",
+        q:"¿Cuál de las siguientes NO es una de las tecnologías clave en el comercio internacional mencionadas por Martel?",
+        opts:["Impacto de la digitalización en el comercio global.",
+              "Rol de la inteligencia artificial en la toma de decisiones.",
+              "Reemplazo total de los Incoterms por contratos inteligentes automatizados."],
+        correct:2,
+        why:"Martel habló de digitalización, IA en la toma de decisiones y fintech en transacciones internacionales. No planteó el reemplazo de los Incoterms." },
+      { category:"invitado", guest:"martel", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Hernán Martel",
+        q:"Según Martel, ¿cuáles son las competencias tecnológicas clave para el profesional de negocios internacionales?",
+        opts:["Dominio de herramientas digitales, integración tecnológica para gestión logística/aduanera, y adaptación continua a la innovación.",
+              "Programación avanzada en lenguajes de bajo nivel como C y Assembler.",
+              "Conocimiento exclusivo de normativa aduanera, sin necesidad de herramientas digitales."],
+        correct:0,
+        why:"Las tres competencias que remarcó: dominio de plataformas digitales, integración tecnológica en procesos logísticos/aduaneros, y adaptación a la innovación para mantener competitividad global." },
+      { category:"invitado", guest:"martel", examHistory:{asked:false, times:0, temas:[]},
+        block:"Invitado: Hernán Martel",
+        q:"Martel mencionó el Índice de Gini durante su exposición sobre desigualdad a lo largo de las revoluciones industriales. ¿Qué mide este índice?",
+        opts:["El porcentaje de trabajadores en riesgo de automatización.",
+              "El nivel de desigualdad en la distribución del ingreso de un país (0 = sin desigualdad, 1 = desigualdad perfecta).",
+              "La velocidad de adopción tecnológica de una industria."],
+        correct:1,
+        why:"Tal como lo explicó: si todos ganan lo mismo, el Gini es 0; si una sola persona concentra todo el ingreso, el Gini es 1." }
     ]
   }
   /* ,{ id:"u2", name:"Unidad 2", questions:[ ... ] } */
@@ -262,17 +446,53 @@ const $ = id => document.getElementById(id);
 const LETTERS = "abcdefghij";
 const INTEG = "integradora";
 let current = UNITS[0].id;
-let state = {};   // estado por pestaña: { items:[...], answers:{idx:opcion} }
+let state = {};          // estado por pestaña: { items:[...], answers:{key:opcion} }
+let filterCat = "all";   // all | clase | invitado | martel | oyadomari
+let onlyExam = false;    // true = solo preguntas tomadas en parciales anteriores
+
+/* Red de seguridad: garantiza los campos de filtrado en toda pregunta,
+   incluso si más adelante se carga una sin ellos. */
+UNITS.forEach(u => u.questions.forEach(q => {
+  if (!q.category) q.category = "clase";
+  if (!("guest" in q)) q.guest = null;
+  if (!q.examHistory) q.examHistory = { asked:false };
+  if (q.examHistory.times == null) q.examHistory.times = q.examHistory.asked ? 1 : 0;
+  if (!Array.isArray(q.examHistory.temas)) q.examHistory.temas = [];
+}));
+
+const FILTERS = [
+  ["all",       "Todas",          false],
+  ["clase",     "Temas de clase", false],
+  ["invitado",  "Invitados",      false],
+  ["martel",    "Martel",         true],
+  ["oyadomari", "Oyadomari",      true]
+];
+const SCOPE_NAME = {
+  all:"Todas", clase:"Temas de clase", invitado:"Invitados",
+  martel:"Invitado: Martel", oyadomari:"Invitado: Oyadomari"
+};
 
 const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 
+function matches(it){
+  if (onlyExam && !it.examHistory.asked) return false;
+  if (filterCat === "clase")     return it.category === "clase";
+  if (filterCat === "invitado")  return it.category === "invitado";
+  if (filterCat === "martel")    return it.guest === "martel";
+  if (filterCat === "oyadomari") return it.guest === "oyadomari";
+  return true;
+}
+
 function itemsFor(tab){
+  /* key estable: las respuestas no dependen de la posición en la lista filtrada */
+  const tag = (u,q,i) => ({...q, unit:u.name, key:u.id+"#"+i});
   if (tab === INTEG)
-    return shuffle(UNITS.flatMap(u => u.questions.map(q => ({...q, unit:u.name}))));
+    return shuffle(UNITS.flatMap(u => u.questions.map((q,i) => tag(u,q,i))));
   const u = UNITS.find(u => u.id === tab);
-  return u.questions.map(q => ({...q, unit:u.name}));
+  return u.questions.map((q,i) => tag(u,q,i));
 }
 function ensure(tab){ if(!state[tab]) state[tab] = { items:itemsFor(tab), answers:{} }; return state[tab]; }
+function visible(){ return ensure(current).items.filter(matches); }
 
 function renderTabs(){
   $("tabs").innerHTML = "";
@@ -285,14 +505,48 @@ function renderTabs(){
   });
 }
 
+function renderFilters(){
+  const box = $("filters");
+  box.innerHTML = "";
+  FILTERS.forEach(([id,name,sub])=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = sub ? "· " + name : name;
+    b.className = "fbtn" + (sub ? " sub" : "") + (id===filterCat ? " active" : "");
+    b.onclick = () => { filterCat = id; renderFilters(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
+    box.appendChild(b);
+  });
+  const lab = document.createElement("label");
+  lab.className = "fcheck" + (onlyExam ? " on" : "");
+  const cb = document.createElement("input");
+  cb.type = "checkbox"; cb.checked = onlyExam;
+  cb.onchange = () => { onlyExam = cb.checked; renderFilters(); render(); };
+  lab.appendChild(cb);
+  lab.appendChild(document.createTextNode("📌 Solo tomadas en parciales anteriores"));
+  box.appendChild(lab);
+}
+
+function examBadge(it){
+  const e = it.examHistory;
+  if (!e.asked) return "";
+  const hot = e.times >= 2;
+  const temas = e.temas.length ? " · " + e.temas.join(", ") : "";
+  const title = hot ? "Tema repetido en parciales: alta probabilidad de que vuelva a salir"
+                    : "Ya fue tomada en un parcial anterior";
+  return `<span class="exam${hot?" hot":""}" title="${title}">📌 Tomada en parciales anteriores (x${e.times})${temas}</span>`;
+}
+
 function render(){
-  const s = ensure(current), list = $("list");
+  const s = ensure(current), list = $("list"), items = visible(), n = items.length;
   list.innerHTML = "";
   $("result").className = "result";
-  if(!s.items.length){ list.innerHTML = '<div class="empty">Todavía no hay preguntas cargadas.</div>'; updateStats(); return; }
+  if(!n){
+    list.innerHTML = '<div class="empty">No hay preguntas que cumplan con este filtro.</div>';
+    updateStats(); return;
+  }
 
   let lastBlock = null;
-  s.items.forEach((it, i) => {
+  items.forEach((it, i) => {
     if (current !== INTEG && it.block !== lastBlock){
       lastBlock = it.block;
       const h = document.createElement("div");
@@ -301,17 +555,20 @@ function render(){
     }
     const card = document.createElement("section");
     card.className = "q";
-    card.innerHTML = `<span class="tag">${current===INTEG ? it.unit : "Pregunta "+(i+1)}</span><h3>${current===INTEG ? (i+1)+". " : (i+1)+". "}${it.q}</h3><div class="opts"></div>`;
+    const tag = current===INTEG
+      ? `${it.unit} · Pregunta ${i+1} de ${n}`
+      : `Pregunta ${i+1} de ${n} (${SCOPE_NAME[filterCat]})`;
+    card.innerHTML = `<span class="tag">${tag}</span>${examBadge(it)}<h3>${i+1}. ${it.q}</h3><div class="opts"></div>`;
     const box = card.querySelector(".opts");
     it.opts.forEach((txt, k) => {
       const b = document.createElement("button");
       b.className = "opt"; b.type = "button";
       b.innerHTML = `<span class="l">${LETTERS[k]}</span><span>${txt}</span>`;
-      b.onclick = () => answer(i, k);
+      b.onclick = () => answer(it.key, k);
       box.appendChild(b);
     });
     list.appendChild(card);
-    if (s.answers[i] !== undefined) paint(card, it, s.answers[i]);
+    if (s.answers[it.key] !== undefined) paint(card, it, s.answers[it.key]);
   });
   updateStats();
 }
@@ -333,31 +590,38 @@ function paint(card, it, choice){
   }
 }
 
-function answer(i, k){
+function answer(key, k){
   const s = ensure(current);
-  if (s.answers[i] !== undefined) return;
-  s.answers[i] = k;
-  paint($("list").querySelectorAll(".q")[i], s.items[i], k);
+  if (s.answers[key] !== undefined) return;
+  s.answers[key] = k;
+  const items = visible(), i = items.findIndex(it => it.key === key);
+  if (i >= 0) paint($("list").querySelectorAll(".q")[i], items[i], k);
   updateStats();
 }
 
 function updateStats(){
-  const s = ensure(current), total = s.items.length;
-  const done = Object.keys(s.answers).length;
-  const right = Object.entries(s.answers).filter(([i,k]) => s.items[i].correct === k).length;
+  /* el puntaje se calcula siempre sobre el subconjunto filtrado */
+  const s = ensure(current), items = visible(), total = items.length;
+  let done = 0, right = 0;
+  items.forEach(it => {
+    const a = s.answers[it.key];
+    if (a !== undefined){ done++; if (a === it.correct) right++; }
+  });
   $("total").textContent = total; $("answered").textContent = done; $("right").textContent = right;
   $("progress").style.width = total ? (done/total*100)+"%" : "0";
+  $("scope").textContent = `Mostrando ${total} pregunta${total===1?"":"s"} · ${SCOPE_NAME[filterCat]}`
+    + (onlyExam ? " · solo tomadas en parciales anteriores" : "");
   const r = $("result");
   if (total && done === total){
     const pct = Math.round(right/total*100);
-    r.innerHTML = `<h2>${pct >= 60 ? "🎉" : "💪"} Resultado: ${right}/${total} (${pct}%)</h2><p>${pct>=60 ? "¡Buen trabajo!" : "Repasá las justificaciones e intentá de nuevo."}</p>`;
+    r.innerHTML = `<h2>${pct >= 60 ? "🎉" : "💪"} Resultado: ${right}/${total} (${pct}%)</h2><p>${SCOPE_NAME[filterCat]}${onlyExam ? " · solo tomadas en parciales anteriores" : ""} — ${pct>=60 ? "¡Buen trabajo!" : "Repasá las justificaciones e intentá de nuevo."}</p>`;
     r.className = "result show";
   } else r.className = "result";
 }
 
 $("reset").onclick = () => { delete state[current]; render(); window.scrollTo({top:0,behavior:"smooth"}); };
 
-renderTabs(); render();
+renderTabs(); renderFilters(); render();
 </script>
 </body>
 </html>
