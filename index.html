@@ -74,7 +74,10 @@
     :root{ --warn:#e9c46a; --warn-bg:#3a2e10; --warn-bd:#6b5518;
            --hot:#ff9f6e;  --hot-bg:#42200f;  --hot-bd:#7a3b1c; }
   }
-  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+  .filters{display:flex;flex-direction:column;gap:9px;margin:0 0 14px}
+  .frow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .flabel{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;flex:0 0 auto;margin-right:2px}
   .fbtn{border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;
     border-radius:999px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:.15s}
   .fbtn:hover{border-color:var(--primary)}
@@ -84,7 +87,6 @@
     cursor:pointer;user-select:none;padding:6px 0}
   .fcheck input{accent-color:var(--primary);width:16px;height:16px;cursor:pointer;margin:0}
   .fcheck.on{color:var(--hot);font-weight:600}
-  @media (min-width:720px){ .fcheck{margin-left:auto} }
   .scope{font-size:.85rem;color:var(--muted);margin:0 0 10px}
   .exam{display:inline-block;font-size:.72rem;font-weight:700;line-height:1.35;
     padding:3px 10px;border-radius:999px;margin:0 0 8px 6px;
@@ -113,10 +115,15 @@
 <script>
 /* ============ DATOS ============
    Para agregar una unidad nueva: sumar un objeto al arreglo UNITS.
-   Cada pregunta: { block, q, opts:[...], correct:índice(0=a), why } */
+   Cada unidad: { id, name, hasGuests, questions:[...] }.
+   Cada pregunta: { category, guest, bloque, examHistory, block, q, opts:[...],
+                    correct:índice(0=a), why }.
+   - category: "clase" | "invitado"; guest: null | "martel" | "oyadomari".
+   - bloque: slug del bloque temático (solo Unidad 2); habilita el filtro por bloque.
+   - examHistory: { asked, times, temas:[...] } para el badge de parciales. */
 const UNITS = [
   {
-    id: "u1", name: "Unidad 1",
+    id: "u1", name: "Unidad 1", hasGuests: true,
     questions: [
       /* Bloque 1 */
       { category:"clase", guest:null, examHistory:{asked:false, times:0, temas:[]},
@@ -437,8 +444,239 @@ const UNITS = [
         correct:1,
         why:"Tal como lo explicó: si todos ganan lo mismo, el Gini es 0; si una sola persona concentra todo el ingreso, el Gini es 1." }
     ]
+  },
+  {
+    id: "u2", name: "Unidad 2", hasGuests: false,
+    questions: [
+      /* Bloque 1 */
+      { category:"clase", guest:null, bloque:"distribucion_transporte", examHistory:{asked:false, times:0, temas:[]},
+        block:"Distribución física internacional y transporte",
+        q:"¿Qué se entiende por \"abastecimiento internacional\"?",
+        opts:["La venta de productos terminados a clientes de otros países.",
+              "La compra de materias primas, componentes o servicios de empresas fuera del país de origen.",
+              "El almacenamiento de mercadería en depósitos fiscales dentro del país de origen."],
+        correct:1,
+        why:"Es la definición textual de la cátedra: comprar afuera, no vender afuera." },
+      { category:"clase", guest:null, bloque:"distribucion_transporte", examHistory:{asked:false, times:0, temas:[]},
+        block:"Distribución física internacional y transporte",
+        q:"Una empresa exporta un producto de consumo duradero sin marca (marca blanca). Según la tabla de canales de distribución vista en clase, ¿qué canal le corresponde?",
+        opts:["Venta directa con red propia o mediante sucursal/filial.",
+              "Canales indirectos: mayoristas, distribuidores o minoristas.",
+              "Venta directa, trading o licitación."],
+        correct:1,
+        why:"La venta directa con red propia es para consumo duradero CON marca. Venta directa/trading/licitación es para productos industriales." },
+      { category:"clase", guest:null, bloque:"distribucion_transporte", examHistory:{asked:true, times:1, temas:["Tema 1"]},
+        block:"Distribución física internacional y transporte",
+        q:"La empresa GLASS tiene que transportar un producto muy frágil y de alto valor unitario. Según la comparativa de modos de transporte, ¿qué medio elegiría?",
+        opts:["Terrestre, vial.",
+              "Fluvial/marítimo.",
+              "Aéreo."],
+        correct:2,
+        why:"En la tabla comparativa, el aéreo es \"óptimo\" para fragilidad y para mercadería de alto costo/volumen o peso, aunque sea el modo más caro." },
+      { category:"clase", guest:null, bloque:"distribucion_transporte", examHistory:{asked:false, times:0, temas:[]},
+        block:"Distribución física internacional y transporte",
+        q:"Un operador logístico no cuenta con recursos físicos propios (camiones o almacenes), pero supervisa y optimiza toda la cadena de suministro del cliente gracias a su experiencia y capacidad tecnológica. ¿De qué tipo de operador se trata?",
+        opts:["2PL",
+              "3PL",
+              "4PL"],
+        correct:2,
+        why:"El 3PL sí provee flota y almacén propios. El 4PL es \"asset-light\": no tiene recursos físicos, solo supervisa y optimiza." },
+      { category:"clase", guest:null, bloque:"distribucion_transporte", examHistory:{asked:false, times:0, temas:[]},
+        block:"Distribución física internacional y transporte",
+        q:"En el transporte multimodal, ¿qué diferencia al modo \"segmentado\" del \"intermodal\"?",
+        opts:["En el segmentado, cada transportista se responsabiliza solo por su propio tramo; en el intermodal, un transportador organiza todo el proceso con un único documento de transporte.",
+              "En el segmentado se usa un solo medio de transporte; en el intermodal, varios.",
+              "No hay diferencia real, son sinónimos usados indistintamente en la cátedra."],
+        correct:0,
+        why:"Intermodal: un transportador organiza todo y emite el documento. Segmentado: responsabilidad dividida por tramos. Multimodal: un solo responsable de todos los trayectos con documento de transporte multimodal propio." },
+
+      /* Bloque 2 */
+      { category:"clase", guest:null, bloque:"comunicacion_marca_pais", examHistory:{asked:true, times:1, temas:["Tema 4"]},
+        block:"Comunicación internacional, marca país y marketing digital",
+        q:"¿Cuál es la diferencia básica entre una exposición internacional y una feria internacional?",
+        opts:["En una exposición se presentan las innovaciones mercadológicas o tecnológicas.",
+              "En una feria se pueden presentar tanto productos nuevos como ya conocidos.",
+              "En una feria se pueden comercializar en el mismo evento los productos expuestos."],
+        correct:2,
+        why:"La feria es un evento social, económico y cultural donde además se puede comercializar; la exposición es una convocatoria pública para exhibir objetos de un tema específico, sin ese fin comercial inmediato." },
+      { category:"clase", guest:null, bloque:"comunicacion_marca_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Comunicación internacional, marca país y marketing digital",
+        q:"¿Qué función cumple la \"marca país\" según lo visto en clase?",
+        opts:["Funciona como soporte que ayuda a identificar y agregar valor a productos, servicios y empresas, posicionando una denominación geográfica en la mente del consumidor.",
+              "Reemplaza la necesidad de un plan de marketing internacional para pymes exportadoras.",
+              "Es un requisito legal para poder exportar bajo cualquier Incoterm."],
+        correct:0,
+        why:"Es una herramienta de posicionamiento, especialmente útil en las etapas introductorias del marketing internacional para países con fuerte imagen en el exterior." },
+      { category:"clase", guest:null, bloque:"comunicacion_marca_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Comunicación internacional, marca país y marketing digital",
+        q:"Una empresa organiza una visita colectiva y concertada de varias empresas de su país a otro país, para explorar oportunidades de negocio. ¿Qué herramienta de comunicación internacional está usando?",
+        opts:["Ronda de negocios.",
+              "Misión comercial.",
+              "Merchandising."],
+        correct:1,
+        why:"Misión comercial = visita colectiva concertada. Ronda de negocios = empresas de ambos países se reúnen de forma particular, no es una visita hacia afuera." },
+      { category:"clase", guest:null, bloque:"comunicacion_marca_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Comunicación internacional, marca país y marketing digital",
+        q:"¿Cuál es la diferencia clave entre ecommerce y marketplace?",
+        opts:["El ecommerce es un sitio propio de la empresa; el marketplace es el sitio de un tercero donde varias marcas venden.",
+              "El ecommerce solo se usa para B2B y el marketplace solo para B2C.",
+              "No hay diferencia, son el mismo canal de venta digital."],
+        correct:0,
+        why:"Es la distinción textual de la cátedra." },
+
+      /* Bloque 3 */
+      { category:"clase", guest:null, bloque:"formas_entrada", examHistory:{asked:true, times:1, temas:["Tema 3"]},
+        block:"Formas de entrada a mercados internacionales",
+        q:"Cuando una empresa opera a través de un trading internacional para exportar (venta indirecta), ¿qué desventaja tiene frente a la exportación directa?",
+        opts:["No se tiene la posibilidad de recibir divisas extranjeras.",
+              "No se adquiere experiencia en comercio internacional.",
+              "No hay posibilidad alguna de prefinanciación de las exportaciones."],
+        correct:1,
+        why:"La venta indirecta vía tradings hace perder contacto con el cliente y el mercado, y no permite adquirir experiencia directa en marketing internacional, algo que sí logra la exportación directa." },
+      { category:"clase", guest:null, bloque:"formas_entrada", examHistory:{asked:false, times:0, temas:[]},
+        block:"Formas de entrada a mercados internacionales",
+        q:"Una empresa argentina firma un acuerdo con una cadena extranjera para que esta última opere bajo su marca y modelo de negocio, a cambio de un porcentaje de los ingresos. ¿Qué forma de entrada contractual es esta?",
+        opts:["Piggy back.",
+              "Licencia.",
+              "Franquicia."],
+        correct:2,
+        why:"La licencia cede el uso de propiedad intelectual (marca, tecnología) a cambio de regalías; la franquicia va más allá: incluye el modelo de negocio completo." },
+      { category:"clase", guest:null, bloque:"formas_entrada", examHistory:{asked:false, times:0, temas:[]},
+        block:"Formas de entrada a mercados internacionales",
+        q:"Según las etapas del proceso de internacionalización, ¿qué viene DESPUÉS de la \"consolidación de exportaciones activas\"?",
+        opts:["Exportaciones pasivas.",
+              "Establecimiento de subsidiarias comerciales.",
+              "Inicio de exportaciones activas."],
+        correct:1,
+        why:"El orden es: exportaciones pasivas → inicio de exportaciones activas → consolidación de exportaciones activas → establecimiento de subsidiarias comerciales → establecimiento de centros de producción." },
+      { category:"clase", guest:null, bloque:"formas_entrada", examHistory:{asked:false, times:0, temas:[]},
+        block:"Formas de entrada a mercados internacionales",
+        q:"Dos empresas de distintos países deciden crear una nueva sociedad conjunta para operar en un tercer mercado, compartiendo capital, riesgos y control. ¿Qué tipo de forma de entrada es?",
+        opts:["Piggy back.",
+              "Joint Venture.",
+              "Consorcio de exportación."],
+        correct:1,
+        why:"El Joint Venture es una operación conjunta en destino; el consorcio de exportación es una operación conjunta en origen, con empresas del mismo país que se unen para exportar." },
+
+      /* Bloque 4 */
+      { category:"clase", guest:null, bloque:"desarrollo_productos", examHistory:{asked:true, times:2, temas:["Tema 1","Tema 4"]},
+        block:"Desarrollo de productos internacionales",
+        q:"La empresa Expo S.R.L. está analizando estandarizar sus productos para sus diferentes mercados internacionales. ¿Qué situación se debe dar para poder seguir esta estrategia?",
+        opts:["Homogeneización de los gustos.",
+              "Usos y costumbres diferentes.",
+              "Condiciones ambientales."],
+        correct:0,
+        why:"La homogeneización de gustos (el \"Homo Globalis\") es una de las razones que justifican la estandarización. Usos/costumbres y condiciones ambientales son, al contrario, razones para adaptar el producto." },
+      { category:"clase", guest:null, bloque:"desarrollo_productos", examHistory:{asked:false, times:0, temas:[]},
+        block:"Desarrollo de productos internacionales",
+        q:"¿Cuál de las siguientes es una ventaja propia de la ESTANDARIZACIÓN y no de la adaptación?",
+        opts:["Economías de escala.",
+              "Mejor respuesta a las preferencias de consumo locales.",
+              "Ajuste a distintos niveles educativos del mercado destino."],
+        correct:0,
+        why:"Economías de escala, homogeneización de gustos, el Homo Globalis, preferencias B2B y reconocimiento internacional son ventajas de estandarizar. Las otras dos son razones para adaptar." },
+      { category:"clase", guest:null, bloque:"desarrollo_productos", examHistory:{asked:true, times:2, temas:["Tema 2","Tema 3"]},
+        block:"Desarrollo de productos internacionales",
+        q:"Al decidir ingresar a un mercado con la estrategia de MARCA BLANCA, ¿qué desventaja posee?",
+        opts:["Barreras de entrada nacionalistas.",
+              "Pérdidas de economías de escala.",
+              "Falta de identidad de cada producto con el mercado objetivo."],
+        correct:2,
+        why:"Ojo con las trampas: \"barreras de entrada nacionalistas\" es desventaja de Marca Global, y \"pérdidas de economías de escala\" es desventaja de Marca Local. La marca blanca, además, se asocia a débil comunicación con el consumidor final y a precios bajos." },
+      { category:"clase", guest:null, bloque:"desarrollo_productos", examHistory:{asked:false, times:0, temas:[]},
+        block:"Desarrollo de productos internacionales",
+        q:"¿Cuál de las siguientes es una ventaja de la estrategia de MARCA GLOBAL?",
+        opts:["Reducción de costos de comunicación y reconocimiento mundial.",
+              "Mejor aceptación de consumidores locales por reconocimiento de marca regional.",
+              "Mayores márgenes para el distribuidor por no depender de marcas Premium."],
+        correct:0,
+        why:"La opción b es ventaja de Marca Local y la c de Marca Blanca. La Marca Global gana en escala y simplicidad de gestión, pero pierde en adaptación local: puede sonar extranjerizante o chocar con barreras nacionalistas." },
+      { category:"clase", guest:null, bloque:"desarrollo_productos", examHistory:{asked:false, times:0, temas:[]},
+        block:"Desarrollo de productos internacionales",
+        q:"Una empresa con un producto \"commodity\" y pocos recursos para innovar decide mantener su línea actual de productos, haciéndole mejoras tecnológicas incrementales (\"upgrades\") para sostener su ciclo de vida. ¿Cómo se llama esta estrategia?",
+        opts:["Adaptación total del producto.",
+              "Estandarización hasta situación límite, con ciclo-reciclo.",
+              "Desarrollo de un producto completamente nuevo."],
+        correct:1,
+        why:"Es la estrategia de mantener la línea actual de productos: llevar el producto a clásico, analizar el ciclo y hacer reciclos o upgrades en vez de desarrollar algo nuevo." },
+
+      /* Bloque 5 */
+      { category:"clase", guest:null, bloque:"precios_internacionales", examHistory:{asked:true, times:2, temas:["Tema 2","Tema 3"]},
+        block:"Precios internacionales e Incoterms",
+        q:"¿El Incoterm FAS siempre le va a costar menos al importador que el Incoterm CIF?",
+        opts:["Sí, porque el FAS no incluye gastos de distribución por transporte marítimo al país del importador y el CIF sí.",
+              "No, porque el FAS puede no incluir los gastos de distribución pero el CIF no incluye los gastos de carga al barco, solo el seguro por transporte marítimo.",
+              "No, porque todos los Incoterms son relativos a lo que acuerden los importadores y exportadores libremente."],
+        correct:0,
+        why:"A mayor responsabilidad del exportador (como en CIF, que incluye costo, seguro y flete), mayor es el precio que termina pagando el importador. El FAS traslada menos costos al precio porque el exportador solo se hace cargo hasta dejar la mercadería al costado del buque." },
+      { category:"clase", guest:null, bloque:"precios_internacionales", examHistory:{asked:true, times:1, temas:["Tema 2"]},
+        block:"Precios internacionales e Incoterms",
+        q:"Con respecto a la estrategia de precio alto o \"descreme\", ¿cuál de las siguientes afirmaciones es verdadera?",
+        opts:["Los consumidores van a gastar más de sus ingresos en nuestro producto.",
+              "Establece una rápida presencia en el mercado.",
+              "Se obtienen altos márgenes unitarios de ganancia."],
+        correct:2,
+        why:"El precio alto apunta a un margen y una contribución marginal unitaria altos, posicionando el producto en el segmento superior (ABC1). La rápida presencia en el mercado es, en cambio, ventaja del precio BAJO." },
+      { category:"clase", guest:null, bloque:"precios_internacionales", examHistory:{asked:true, times:1, temas:["Tema 3"]},
+        block:"Precios internacionales e Incoterms",
+        q:"Con respecto a la estrategia de precio bajo, ¿cuál de los siguientes conceptos es verdadero?",
+        opts:["Mayor participación de mercado.",
+              "Los consumidores siempre van a relacionar precio bajo con mala calidad.",
+              "Se obtienen altos márgenes unitarios de ganancia."],
+        correct:0,
+        why:"El precio bajo asegura vender las cantidades ofrecidas y da rápida presencia en el mercado (estrategia de empuje), a costa de escasos márgenes y baja contribución marginal: lo opuesto al precio alto." },
+      { category:"clase", guest:null, bloque:"precios_internacionales", examHistory:{asked:true, times:1, temas:["Tema 4"]},
+        block:"Precios internacionales e Incoterms",
+        q:"¿Hasta qué punto se puede bajar el precio de un producto sin quebrar a la firma?",
+        opts:["El precio del producto debe estar por encima del costo total unitario.",
+              "El precio del producto puede estar por encima del costo medio variable.",
+              "El precio del producto puede estar por encima del gasto medio de distribución."],
+        correct:1,
+        why:"Si el precio cae por debajo del costo medio variable, las operaciones dejan de aportar flujos de fondos positivos ni siquiera para cubrir costos fijos: ahí está el piso real. Estar por encima del costo total unitario es deseable, pero no es el límite de supervivencia." },
+      { category:"clase", guest:null, bloque:"precios_internacionales", examHistory:{asked:false, times:0, temas:[]},
+        block:"Precios internacionales e Incoterms",
+        q:"Una empresa exporta un producto a un precio más bajo en el país importador que el que cobra por el mismo producto en su propio país, gracias a un subsidio estatal. ¿Cómo se denomina esta práctica?",
+        opts:["Precio de descreme.",
+              "Dumping.",
+              "Precio de mercado."],
+        correct:1,
+        why:"Es la definición de dumping vista en clase: competencia desleal que permite a empresas subsidiadas quedarse con mercados externos perjudicando a competidores que no pueden subsidiarse." },
+
+      /* Bloque 6 */
+      { category:"clase", guest:null, bloque:"analisis_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Razones para exportar y análisis de país",
+        q:"Según las razones para exportar vistas en clase, ¿cuál de las siguientes es una VENTAJA (y no una desventaja) de exportar?",
+        opts:["Estabilizar las fluctuaciones estacionales del mercado doméstico.",
+              "Necesidad de desarrollar nuevo material promocional.",
+              "Necesidad de obtener financiamiento adicional."],
+        correct:0,
+        why:"Las ventajas apuntan a reducir la dependencia de los mercados locales: vender excedentes, estabilizar la estacionalidad y ganar mercado global. Las desventajas son básicamente costos y esfuerzos adicionales de corto plazo a cambio de ganancias de mediano y largo plazo." },
+      { category:"clase", guest:null, bloque:"analisis_pais", examHistory:{asked:true, times:1, temas:["Tema 1"]},
+        block:"Razones para exportar y análisis de país",
+        q:"El análisis de la competencia debe contener como mínimo uno de los siguientes conceptos:",
+        opts:["El porcentaje de mercado que obtiene cada competidor directo en ese mercado.",
+              "La identificación de las principales marcas de la firma exportadora en ese mercado.",
+              "El costo de los principales transportes que distribuyen los productos de la competencia."],
+        correct:0,
+        why:"Analizar la competencia implica mirar la participación de mercado de los competidores directos, no las marcas propias de la firma exportadora ni el costo logístico ajeno." },
+      { category:"clase", guest:null, bloque:"analisis_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Razones para exportar y análisis de país",
+        q:"Al construir la matriz de riesgo cuantitativo de un país, ¿qué entornos se ponderan y combinan?",
+        opts:["Económico, político, comercial, sectorial/industria y cultural.",
+              "Solo el entorno económico, porque los demás son subjetivos y no cuantificables.",
+              "Únicamente tipo de cambio e inflación."],
+        correct:0,
+        why:"Son los 5 factores de riesgo: entorno económico, político, comercial, sector/industria y cultural, cada uno ponderado en una franja de intensidad de riesgo." },
+      { category:"clase", guest:null, bloque:"analisis_pais", examHistory:{asked:false, times:0, temas:[]},
+        block:"Razones para exportar y análisis de país",
+        q:"En el análisis del entorno cultural de un país destino, un producto tiene un nombre que resulta ofensivo o gracioso en el idioma local (como pasó con el Mitsubishi Pajero, rebautizado Montero). ¿A qué concepto del análisis cultural corresponde este problema?",
+        opts:["Idioma.",
+              "Religión.",
+              "Instituciones sociales establecidas."],
+        correct:0,
+        why:"El cuadro de conceptos y problemas del entorno cultural ubica el significado inconveniente del nombre del producto bajo \"Idioma\", distinto de religión (el producto atenta contra creencias) o instituciones sociales (preconceptos fomentados por esas instituciones)." }
+    ]
   }
-  /* ,{ id:"u2", name:"Unidad 2", questions:[ ... ] } */
 ];
 
 /* ============ LÓGICA ============ */
@@ -447,14 +685,16 @@ const LETTERS = "abcdefghij";
 const INTEG = "integradora";
 let current = UNITS[0].id;
 let state = {};          // estado por pestaña: { items:[...], answers:{key:opcion} }
-let filterCat = "all";   // all | clase | invitado | martel | oyadomari
-let onlyExam = false;    // true = solo preguntas tomadas en parciales anteriores
+let filterCat = "all";    // all | clase | invitado | martel | oyadomari
+let filterBloque = "all"; // slug de bloque temático (Unidad 2) o "all"
+let onlyExam = false;     // true = solo preguntas tomadas en parciales anteriores
 
 /* Red de seguridad: garantiza los campos de filtrado en toda pregunta,
    incluso si más adelante se carga una sin ellos. */
 UNITS.forEach(u => u.questions.forEach(q => {
   if (!q.category) q.category = "clase";
   if (!("guest" in q)) q.guest = null;
+  if (!("bloque" in q)) q.bloque = null;
   if (!q.examHistory) q.examHistory = { asked:false };
   if (q.examHistory.times == null) q.examHistory.times = q.examHistory.asked ? 1 : 0;
   if (!Array.isArray(q.examHistory.temas)) q.examHistory.temas = [];
@@ -467,6 +707,14 @@ const FILTERS = [
   ["martel",    "Martel",         true],
   ["oyadomari", "Oyadomari",      true]
 ];
+const BLOQUES = {
+  distribucion_transporte: "Distribución y transporte",
+  comunicacion_marca_pais: "Comunicación y marca país",
+  formas_entrada:          "Formas de entrada",
+  desarrollo_productos:    "Desarrollo de productos",
+  precios_internacionales: "Precios e Incoterms",
+  analisis_pais:           "Exportar y análisis de país"
+};
 const SCOPE_NAME = {
   all:"Todas", clase:"Temas de clase", invitado:"Invitados",
   martel:"Invitado: Martel", oyadomari:"Invitado: Oyadomari"
@@ -474,8 +722,34 @@ const SCOPE_NAME = {
 
 const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 
+/* Qué controles aplican a la pestaña activa: se deduce de los datos, no se hardcodea la unidad. */
+function tabUnits(){ return current === INTEG ? UNITS : UNITS.filter(u => u.id === current); }
+function hasGuests(){ return tabUnits().some(u => u.hasGuests); }
+function bloquesFor(){
+  if (current === INTEG) return [];   // la integradora mezcla unidades: sin filtro de bloque
+  const out = [];
+  tabUnits().forEach(u => u.questions.forEach(q => {
+    if (q.bloque && !out.includes(q.bloque)) out.push(q.bloque);
+  }));
+  return out;
+}
+function bloqueName(b){ return BLOQUES[b] || b; }
+/* etiqueta corta para el tag de cada tarjeta */
+function shortScope(){
+  if (filterBloque !== "all") return bloqueName(filterBloque);
+  return hasGuests() ? SCOPE_NAME[filterCat] : "Todas";
+}
+/* etiqueta completa para la línea de alcance y el resultado */
+function scopeLabel(){
+  const p = [hasGuests() ? SCOPE_NAME[filterCat] : "Todas"];
+  if (filterBloque !== "all") p.push(bloqueName(filterBloque));
+  if (onlyExam) p.push("solo tomadas en parciales anteriores");
+  return p.join(" · ");
+}
+
 function matches(it){
   if (onlyExam && !it.examHistory.asked) return false;
+  if (filterBloque !== "all" && it.bloque !== filterBloque) return false;
   if (filterCat === "clase")     return it.category === "clase";
   if (filterCat === "invitado")  return it.category === "invitado";
   if (filterCat === "martel")    return it.guest === "martel";
@@ -500,7 +774,13 @@ function renderTabs(){
     const b = document.createElement("button");
     b.textContent = name;
     b.className = id===current ? "active" : "";
-    b.onclick = () => { current = id; renderTabs(); render(); };
+    b.onclick = () => {
+      current = id;
+      filterBloque = "all";                 // los bloques son propios de cada unidad
+      if (!hasGuests()) filterCat = "all";  // sin invitados, el filtro de categoría no aplica
+      renderTabs(); renderFilters(); render();
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
     $("tabs").appendChild(b);
   });
 }
@@ -508,14 +788,39 @@ function renderTabs(){
 function renderFilters(){
   const box = $("filters");
   box.innerHTML = "";
-  FILTERS.forEach(([id,name,sub])=>{
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = sub ? "· " + name : name;
-    b.className = "fbtn" + (sub ? " sub" : "") + (id===filterCat ? " active" : "");
-    b.onclick = () => { filterCat = id; renderFilters(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
-    box.appendChild(b);
-  });
+
+  /* una fila de chips; `pick` aplica el valor elegido y repinta */
+  const chipRow = (label, opciones, activo, pick) => {
+    const row = document.createElement("div");
+    row.className = "frow";
+    if (label){
+      const s = document.createElement("span");
+      s.className = "flabel"; s.textContent = label;
+      row.appendChild(s);
+    }
+    opciones.forEach(([id,name,sub])=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = sub ? "· " + name : name;
+      b.className = "fbtn" + (sub ? " sub" : "") + (id===activo ? " active" : "");
+      b.onclick = () => { pick(id); renderFilters(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+  };
+
+  /* categoría e invitados: solo si la unidad activa tiene invitados */
+  if (hasGuests())
+    chipRow("", FILTERS, filterCat, id => { filterCat = id; });
+
+  /* bloque temático: solo en unidades que traen el campo `bloque` */
+  const bl = bloquesFor();
+  if (bl.length)
+    chipRow("Bloque", [["all","Todos",false]].concat(bl.map(b => [b, bloqueName(b), true])),
+            filterBloque, id => { filterBloque = id; });
+
+  const row = document.createElement("div");
+  row.className = "frow";
   const lab = document.createElement("label");
   lab.className = "fcheck" + (onlyExam ? " on" : "");
   const cb = document.createElement("input");
@@ -523,7 +828,8 @@ function renderFilters(){
   cb.onchange = () => { onlyExam = cb.checked; renderFilters(); render(); };
   lab.appendChild(cb);
   lab.appendChild(document.createTextNode("📌 Solo tomadas en parciales anteriores"));
-  box.appendChild(lab);
+  row.appendChild(lab);
+  box.appendChild(row);
 }
 
 function examBadge(it){
@@ -557,7 +863,7 @@ function render(){
     card.className = "q";
     const tag = current===INTEG
       ? `${it.unit} · Pregunta ${i+1} de ${n}`
-      : `Pregunta ${i+1} de ${n} (${SCOPE_NAME[filterCat]})`;
+      : `Pregunta ${i+1} de ${n} (${shortScope()})`;
     card.innerHTML = `<span class="tag">${tag}</span>${examBadge(it)}<h3>${i+1}. ${it.q}</h3><div class="opts"></div>`;
     const box = card.querySelector(".opts");
     it.opts.forEach((txt, k) => {
@@ -609,12 +915,11 @@ function updateStats(){
   });
   $("total").textContent = total; $("answered").textContent = done; $("right").textContent = right;
   $("progress").style.width = total ? (done/total*100)+"%" : "0";
-  $("scope").textContent = `Mostrando ${total} pregunta${total===1?"":"s"} · ${SCOPE_NAME[filterCat]}`
-    + (onlyExam ? " · solo tomadas en parciales anteriores" : "");
+  $("scope").textContent = `Mostrando ${total} pregunta${total===1?"":"s"} · ${scopeLabel()}`;
   const r = $("result");
   if (total && done === total){
     const pct = Math.round(right/total*100);
-    r.innerHTML = `<h2>${pct >= 60 ? "🎉" : "💪"} Resultado: ${right}/${total} (${pct}%)</h2><p>${SCOPE_NAME[filterCat]}${onlyExam ? " · solo tomadas en parciales anteriores" : ""} — ${pct>=60 ? "¡Buen trabajo!" : "Repasá las justificaciones e intentá de nuevo."}</p>`;
+    r.innerHTML = `<h2>${pct >= 60 ? "🎉" : "💪"} Resultado: ${right}/${total} (${pct}%)</h2><p>${scopeLabel()} — ${pct>=60 ? "¡Buen trabajo!" : "Repasá las justificaciones e intentá de nuevo."}</p>`;
     r.className = "result show";
   } else r.className = "result";
 }
